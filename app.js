@@ -13,7 +13,9 @@ app.use(express.static("public"));
 
 //Create new Database
 
-mongoose.connect("mongodb+srv://hg8848:GuptaHimalay@cluster0-y70r4.mongodb.net/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true });
+mongoose.connect("mongodb+srv://hg8848:GuptaHimalay@cluster0-y70r4.mongodb.net/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true })
+    .then(() => console.log( 'Database Connected' ))
+    .catch(err => console.log( err ));
 
 const ItemsSchema = new mongoose.Schema({
     name: String
@@ -39,6 +41,8 @@ const WorkItem = mongoose.model("WorkItem", ItemsSchema);
 app.get("/", (req, res) => {
     
     Item.find({}, (err, Items) => {
+        if(err) console.log(err);
+        
         res.render("list", {ListTitle: date(), newListItem: Items});
     })
     // if(currentDay === 6 || currentDay === 0){
@@ -51,6 +55,8 @@ app.get("/", (req, res) => {
 
 app.get("/work", (req, res) => {
     WorkItem.find({}, (err, workItems) => {
+        if(err) console.log(err);
+        
         res.render("list", {ListTitle: "Work List", newListItem: workItems});
     })
 });
