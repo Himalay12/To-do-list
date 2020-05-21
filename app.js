@@ -106,7 +106,10 @@ app.post("/delete", (req, res) => {
     }
 });
 
+let port = process.env.PORT;
 
-app.listen(8845, () => {
+if(port == null || port == "") port = 8845
+
+app.listen(port, () => {
     console.log("Server started on port 8845");
 })
