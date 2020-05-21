@@ -36,10 +36,6 @@ const WorkItem = mongoose.model("WorkItem", ItemsSchema);
 //const defaultItems = [Item1, Item2, Item3];
 
 
-
-// let Items = [];
-// let workItems = [];
-
 app.get("/", (req, res) => {
     
     Item.find({}, (err, Items) => {
