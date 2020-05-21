@@ -13,7 +13,7 @@ app.use(express.static("public"));
 
 //Create new Database
 
-mongoose.connect("mongodb://localhost:27017/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true });
+mongoose.connect("mongodb+srv://hg8848:GuptaHimalay@cluster0-y70r4.mongodb.net/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true });
 
 const ItemsSchema = new mongoose.Schema({
     name: String
@@ -111,5 +111,5 @@ let port = process.env.PORT;
 if(port == null || port == "") port = 8845
 
 app.listen(port, () => {
-    console.log("Server started on port 8845");
+    console.log(`Server started on port ${port}`);
 })
