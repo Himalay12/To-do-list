@@ -1,2 +1,2 @@
 # To-do-list
-# [a link](https://sheltered-coast-05163.herokuapp.com/) is link to webpage.
+# [Go To Page](https://sheltered-coast-05163.herokuapp.com/)
