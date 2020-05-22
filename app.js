@@ -12,8 +12,8 @@ app.use(express.static("public"));
 
 
 //Create new Database
-
-mongoose.connect("mongodb+srv://hg8848:GuptaHimalay@cluster0-y70r4.mongodb.net/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true })
+// mongodb+srv://hg8848:GuptaHimalay@cluster0-y70r4.mongodb.net/todolistDB
+mongoose.connect("mongodb://localhost:27017/todolistDB", { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log( 'Database Connected' ))
     .catch(err => console.log( err ));
 
