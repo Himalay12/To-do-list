@@ -1,15 +1,33 @@
+require('dotenv').config()
 const express = require('express');
-const bodyParser = require('body-parser');
 const date = require(`${__dirname}/Date.js`);
 const mongoose = require('mongoose');
+const ejs = require("ejs");
+const session = require('express-session');
+const passport = require('passport');
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const app = express();
 
 
 app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.urlencoded({extended: false}));
 app.use(express.static("public"));
 
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
+
+ //below all the uses function
+ app.use(session({
+    secret: "our little secret.",
+    resave: false,
+    saveUninitialized: false
+}));
+
+//initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 //Create new Database
 // mongodb+srv://:@cluster0-y70r4.mongodb.net/todolistDB
@@ -18,95 +36,142 @@ mongoose.connect(`mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0
     .catch(err => console.log( err ));
 
 const ItemsSchema = new mongoose.Schema({
-    name: String
+    UserName: String,
+    email: String,
+    Item: [String]
 });
 
-const Item = mongoose.model("Item", ItemsSchema);
+//user schema
+const userSchema = new mongoose.Schema({
+    email: String,
+    password: String
+});
+
+//userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields:['password'] });
+userSchema.plugin(passportLocalMongoose);
+
+const User = new mongoose.model("User", userSchema);
+
+//create strategy
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// Item schema for users
 const WorkItem = mongoose.model("WorkItem", ItemsSchema);
-// const Item1 = new Item({
-//     name: "Welcome to your todolist!."
-// });
 
-// const Item2 = new Item({
-//     name: "Hit the + button to add a new item."
-// });
-
-// const Item3 = new Item({
-//     name: "<-- Hit this to delete an item."
-// })
-
-//const defaultItems = [Item1, Item2, Item3];
-
-
-app.get("/", (req, res) => {
-    
-    Item.find({}, (err, Items) => {
-        if(err) console.log(err);
-        
-        res.render("list", {ListTitle: date(), newListItem: Items});
+// main page
+app.route("/")
+    .get((req, res) => {
+        res.render("list", {ListTitle: date(), newListItem: [], Token: ""});
     })
-    // if(currentDay === 6 || currentDay === 0){
-    //     res.sendFile(`${__dirname}/weekend.html`);
-    // } else {
-    //     res.sendFile(`${__dirname}/weekday.html`);
-    // }
-})
-
-
-app.get("/work", (req, res) => {
-    WorkItem.find({}, (err, workItems) => {
-        if(err) console.log(err);
-        
-        res.render("list", {ListTitle: "Work List", newListItem: workItems});
-    })
-});
-
-// app.post("/work", (req, res) => {
-    
-//     let item = req.body.newItem;
-//     workItems.push(item);
-//     res.redirect("/work");
-// })
-
-
-//post
-app.post("/", (req, res) => {
-
-    const Item1 = new Item({
-        name: req.body.Items
+    .post((req, res) => {
+        res.redirect('/login');
     });
 
-    if(req.body.list === "Work List"){
-        WorkItem.insertMany([Item1], err => {
-            if(err) throw err;
-        });
-        res.redirect("/work")
-    } else {
-        Item.insertMany([Item1], err => {
-            if(err) throw err;
-        });
-        res.redirect("/");
-    }
-});
+//Login Page
+app.route("/login")
+    .get((req, res) => {
+        res.render("login");
+    })
+    .post((req, res) => {
 
+        const user = new User({
+            username: req.body.username,
+            password: req.body.password
+        });
+    
+        req.login(user, err => {
+            if(err) {
+                console.log(err);
+            }
+            else passport.authenticate("local")(req, res, () => {
+                res.redirect("/"+req.user.username);
+            })
+        });  
+     });
 
-app.post("/delete", (req, res) => {
-    
-    const checkbox = req.body.checkbox.split(" ");
-    
-    if(checkbox[1] === "Work"){
-        WorkItem.findByIdAndDelete(checkbox[0], (err) => {
-            if(err) throw err;
-        });
-        res.redirect("/work");    
-    }
-    else{
-        Item.findByIdAndDelete(checkbox[0], (err) => {
-            if(err) throw err;
-        });
+//Register Page
+app.route("/register")
+    .get((req, res) => {
+        res.render("register");
+    })
+    .post((req, res) => {
+
+        User.register({ username: req.body.username}, req.body.password, (err, user) => {
+            if (err) console.log(err);
+            else {
+                const userData = new WorkItem({
+                    UserName: req.body.name,
+                    email: req.body.username,
+                    Item: []
+                })
+                WorkItem.insertMany(userData, err => {
+                    if(err) throw err;
+                    console.log('successfully registered');
+                })
+                res.redirect("/login");
+            }
+            res.redirect("/register");
+        })
+    });
+
+// Delete 
+app.route("/delete/:Token")
+    .post((req, res) => {
+        console.log(req.body.checkbox);
+        if(req.params.Token!=""){
+            WorkItem.findOneAndUpdate(
+                { email: req.params.Token},
+                { $pull: {Item: req.body.checkbox} }, 
+                { new: true},
+                (err, doc) => {
+                    if(err) throw err;
+                    console.log("successfully removed")
+                }
+            );
+        }
+        res.redirect("/"+req.params.Token);
+    });
+
+//list rendering
+app.route("/:Token")
+    .get((req, res) => {
+        if(!req.isAuthenticated()) res.redirect("/login");
+        let list;
+        if(req.params.Token!=""){
+            WorkItem.findOne({email: req.params.Token}, (err, Items) => {
+                if(err) throw err;
+                if(Items!=null){
+                    res.render("list", {ListTitle: date(), newListItem: Items.Item, Token: req.params.Token});
+                }
+            });
+        }
+    })
+    .post((req, res) => {
+        if(req.params.Token==""){
+            return res.status(400).json({
+                status: 'error',
+                error: 'req body cannot be empty',
+              });
+        }    
+        WorkItem.findOneAndUpdate(
+            { email: req.params.Token},
+            { $push: {Item: req.body.Items} }, 
+            { new: true},
+            (err, doc) => {
+                if(err) throw err;
+                console.log("successfully added")
+            }
+        );
+        res.redirect("/"+req.params.Token);
+    });
+
+app.route("/logout")
+    .get((req, res) => {
+        req.logout();
         res.redirect("/");
-    }
-});
+    });
 
 let port = process.env.PORT;
 

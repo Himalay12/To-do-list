@@ -4,17 +4,17 @@
     </div>
 
     <div class="box">
-        <form class="item" action="/" method="POST">
+        <form class="item" action="/<%= Token %>" method="POST">
             <input type="text" name="Items" placeholder="Input Items" />
             <button type="submit" name="list" value="<%= ListTitle %>">+</button>
         </form>
             
         <!--li> <%= newListItem %> </li-->
         <% newListItem.forEach(el => { %> 
-            <form action="/delete" method="POST">
+            <form action="/delete/<%= Token %>" method="POST">
                 <div class="item">
-                    <input type="checkbox" name="checkbox" value="<%= el._id %> <%= ListTitle %>" onchange="this.form.submit()">
-                    <p><%= el.name %></p>
+                    <input type="checkbox" name="checkbox" value="<%= el %>" onchange="this.form.submit()">
+                    <p><%= el %></p>
                 </div>
             </form>
         <% }); %>    
