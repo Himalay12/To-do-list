@@ -31,7 +31,7 @@ app.use(passport.session());
 
 //Create new Database
 // mongodb+srv://:@cluster0-y70r4.mongodb.net/todolistDB
-mongoose.connect(`mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0-y70r4.mongodb.net/todolistDB`, { useUnifiedTopology: true, useNewUrlParser: true })
+mongoose.connect(`mongodb+srv://hg8848:ICQLnv9hrNLHz6lz@cluster0-y70r4.mongodb.net/todolistDB`, { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log( 'Database Connected' ))
     .catch(err => console.log( err ));
 
